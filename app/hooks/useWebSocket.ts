@@ -9,7 +9,7 @@ import {
 } from '@/lib/store/slices/webSocketSlice';
 
 // Replace this with your Finnhub API token
-const FINNHUB_TOKEN = 'd43ii6pr01qvk0jc33fgd43ii6pr01qvk0jc33g0';
+const FINNHUB_TOKEN = 'd447f4pr01qge0d0t6sgd447f4pr01qge0d0t6t0';
 
 export function useWebSocket() {
     const dispatch = useDispatch();
