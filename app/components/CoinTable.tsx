@@ -57,7 +57,7 @@ export function CoinTable({ coins }: CoinTableProps) {
                     </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200 block h-[calc(100vh-250px)] overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-thumb]:bg-blue-500 [&::-webkit-scrollbar-thumb]:rounded-full relative" id="coinTableBody">
-                    {coins.map((coin) => coin && (
+                    {coins.map((coin) => (
                         <tr key={coin.id} className="hover:bg-gray-50 flex w-full">
                             <td className="w-[10%] px-6 py-4 whitespace-nowrap">
                                 <button

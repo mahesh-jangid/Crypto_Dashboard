@@ -9,7 +9,7 @@ import {
 } from '@/lib/store/slices/webSocketSlice';
 
 // Replace this with your Finnhub API token
-const FINNHUB_TOKEN = 'd447f4pr01qge0d0t6sgd447f4pr01qge0d0t6t0';
+const FINNHUB_TOKEN = 'd448189r01qge0d0vh8gd448189r01qge0d0vh90';
 
 export function useWebSocket() {
     const dispatch = useDispatch();
@@ -28,24 +28,25 @@ export function useWebSocket() {
             return;
         }
 
-        ws.current = new WebSocket(`wss://ws.finnhub.io?token=${FINNHUB_TOKEN}`);
+        const socket = new WebSocket(`wss://ws.finnhub.io?token=${FINNHUB_TOKEN}`);
+        ws.current = socket;
         
         // Set connection timeout
         const timeoutId = setTimeout(() => {
-            if (ws.current?.readyState !== WebSocket.OPEN) {
-                ws.current?.close();
+            if (socket.readyState !== WebSocket.OPEN) {
+                socket.close();
                 dispatch(setError('Connection timeout. Please check your internet connection.'));
             }
         }, CONNECTION_TIMEOUT);
 
-        ws.current.onopen = () => {
+        socket.onopen = () => {
             clearTimeout(timeoutId);
             reconnectAttempts.current = 0;
             dispatch(setConnected(true));
             console.log('WebSocket connected successfully');
         };
 
-        ws.current.onclose = (event) => {
+        socket.onclose = (event) => {
             clearTimeout(timeoutId);
             dispatch(setConnected(false));
             console.log(`WebSocket closed with code: ${event.code}, reason: ${event.reason}`);
@@ -61,19 +62,19 @@ export function useWebSocket() {
             }
         };
 
-        ws.current.onerror = (error) => {
-            console.error('WebSocket error:', error);
+        socket.onerror = (event: Event) => {
+            console.error('WebSocket error:', event);
             dispatch(setError('WebSocket connection error. Please check your internet connection.'));
         };
 
         // Add connection state monitoring
         const checkConnection = setInterval(() => {
-            if (ws.current?.readyState === WebSocket.CONNECTING) {
+            if (socket.readyState === WebSocket.CONNECTING) {
                 console.log('Still connecting to WebSocket...');
             }
         }, 1000);
 
-        ws.current.onmessage = (event) => {
+        socket.onmessage = (event) => {
             // Clear the connection check interval once we start receiving messages
             clearInterval(checkConnection);
             try {
@@ -102,22 +103,24 @@ export function useWebSocket() {
                     });
                 } else if (data.type === 'ping') {
                     // Respond to ping with pong to keep connection alive
-                    ws.current?.send(JSON.stringify({ type: 'pong' }));
+                    socket.send(JSON.stringify({ type: 'pong' }));
                 }
             } catch (error) {
                 console.error('Error processing WebSocket message:', error);
                 dispatch(setError('Error processing trade data'));
             }
         };
-    }, [dispatch]);
+    }, [dispatch, MAX_RECONNECT_ATTEMPTS, RECONNECT_DELAY]);
 
     const subscribe = useCallback((symbol: string) => {
+        if (!symbol) return;
         if (ws.current?.readyState === WebSocket.OPEN) {
             ws.current.send(JSON.stringify({ type: 'subscribe', symbol }));
         }
     }, []);
 
     const unsubscribe = useCallback((symbol: string) => {
+        if (!symbol) return;
         if (ws.current?.readyState === WebSocket.OPEN) {
             ws.current.send(JSON.stringify({ type: 'unsubscribe', symbol }));
         }
