@@ -1,8 +1,8 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { FavoritesState } from '../../types/coin';
+import { FavoritesState } from '@/types/coin';
 
 const initialState: FavoritesState = {
-    favoriteCoins: [],
+     favoriteCoins: [],
 };
 
 const favoritesSlice = createSlice({
