@@ -37,7 +37,7 @@ export function CoinTable({ coins }: CoinTableProps) {
     return (
         <div className="w-full">
             <table className="w-full divide-y divide-gray-200 table-fixed">
-                <thead className="bg-white sticky top-0 z-10 shadow-sm block">
+                <thead className="bg-white sticky top-0 shadow-sm block">
                     <tr className="flex">
                         <th scope="col" className="w-[10%] px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
                             Favorite
