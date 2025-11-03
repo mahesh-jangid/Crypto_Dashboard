@@ -14,27 +14,68 @@ const FINNHUB_TOKEN = 'd447f4pr01qge0d0t6sgd447f4pr01qge0d0t6t0';
 export function useWebSocket() {
     const dispatch = useDispatch();
     const ws = useRef<WebSocket | null>(null);
-
+    const reconnectAttempts = useRef(0);
+    const MAX_RECONNECT_ATTEMPTS = 5;
+    const RECONNECT_DELAY = 2000; // 2 seconds
+    const CONNECTION_TIMEOUT = 10000; // 10 seconds
+    
     const connect = useCallback(() => {
         if (ws.current?.readyState === WebSocket.OPEN) return;
+        
+        // Reset connection if we've reached max attempts
+        if (reconnectAttempts.current >= MAX_RECONNECT_ATTEMPTS) {
+            dispatch(setError('Maximum reconnection attempts reached. Please try again later.'));
+            return;
+        }
 
         ws.current = new WebSocket(`wss://ws.finnhub.io?token=${FINNHUB_TOKEN}`);
+        
+        // Set connection timeout
+        const timeoutId = setTimeout(() => {
+            if (ws.current?.readyState !== WebSocket.OPEN) {
+                ws.current?.close();
+                dispatch(setError('Connection timeout. Please check your internet connection.'));
+            }
+        }, CONNECTION_TIMEOUT);
 
         ws.current.onopen = () => {
+            clearTimeout(timeoutId);
+            reconnectAttempts.current = 0;
             dispatch(setConnected(true));
+            console.log('WebSocket connected successfully');
         };
 
-        ws.current.onclose = () => {
+        ws.current.onclose = (event) => {
+            clearTimeout(timeoutId);
             dispatch(setConnected(false));
-            // Attempt to reconnect after 5 seconds
-            setTimeout(connect, 5000);
+            console.log(`WebSocket closed with code: ${event.code}, reason: ${event.reason}`);
+            
+            // Increment reconnection attempts
+            reconnectAttempts.current++;
+            
+            if (reconnectAttempts.current < MAX_RECONNECT_ATTEMPTS) {
+                console.log(`Attempting to reconnect (${reconnectAttempts.current}/${MAX_RECONNECT_ATTEMPTS})`);
+                setTimeout(connect, RECONNECT_DELAY);
+            } else {
+                dispatch(setError('Connection lost. Maximum reconnection attempts reached.'));
+            }
         };
 
         ws.current.onerror = (error) => {
-            dispatch(setError('WebSocket connection error'));
+            console.error('WebSocket error:', error);
+            dispatch(setError('WebSocket connection error. Please check your internet connection.'));
         };
 
+        // Add connection state monitoring
+        const checkConnection = setInterval(() => {
+            if (ws.current?.readyState === WebSocket.CONNECTING) {
+                console.log('Still connecting to WebSocket...');
+            }
+        }, 1000);
+
         ws.current.onmessage = (event) => {
+            // Clear the connection check interval once we start receiving messages
+            clearInterval(checkConnection);
             try {
                 const data = JSON.parse(event.data);
                 console.log('WebSocket message received:', data); // Debug log
